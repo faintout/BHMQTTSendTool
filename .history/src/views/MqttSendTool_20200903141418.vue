@@ -2,7 +2,7 @@
     <div class="content">
         <title></title>
         <!-- 按钮模块 -->
-        <div style="position: relative;left: calc(50% - 13%);width: 50%;">
+        <div  class="content_title">
             <!-- <el-input style="display:inline-block;width:20%;right: 5%;" size="small" v-model="localIP"></el-input> -->
             <el-button type="success" size="small" @click="getAllMqttData">获取</el-button>
             <el-button size="mini" @click="batch(0)">批量主发送</el-button>
@@ -11,9 +11,9 @@
         </div>
         <el-table v-loading="tableLoading" :data="tableData" class="el_table">
             >
-            <el-table-column prop="name" label="名称" width="300">
+            <el-table-column prop="name" label="名称" align='center'>
             </el-table-column>
-            <el-table-column label="切换源" width="300">
+            <el-table-column label="切换源" align='center'>
                 <template slot-scope="scope">
                     <el-radio-group v-model="scope.row.switchStatus">
                         <el-radio :label="0" @click="scope.row.switchStatus = 0">主</el-radio>
@@ -21,7 +21,7 @@
                     </el-radio-group>
                 </template>
             </el-table-column>
-            <el-table-column min-width="1" label="操作" width="180">
+            <el-table-column label="操作" align='center'>
                 <template slot-scope="scope">
                     <el-button type="success" size="small" @click="changeData(scope.row)">编辑</el-button>
                     <el-button type="success" size="small" @click="sendData(scope.row)">发送</el-button>
@@ -29,9 +29,8 @@
             </el-table-column>
         </el-table>
         <!-- 弹框 -->
-        <el-dialog title="编辑" :visible.sync="dialogVisible" width="30%" >
-            <el-input type="textarea"
-  :rows="8" class="el_input" v-model="editTable"></el-input>
+        <el-dialog title="编辑" :visible.sync="dialogVisible" width="30%"  :close-on-click-modal = false>
+            <el-input type="textarea" :rows="25" class="el_input" v-model="editTable"></el-input>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="dialogVisible = false">取 消</el-button>
                 <el-button type="primary" @click="saveEdit">确 定</el-button>
@@ -50,15 +49,15 @@
         components: {},
         data() {
             return {
-                dialogVisible :false,
+                dialogVisible: false,
                 //本地IP
                 localIP: '',
                 //表格框加载
                 tableLoading: false,
                 tableData: [],
-                editTable:'',
-                editId:'',
-                editswitchStatus:''
+                editTable: '',
+                editId: '',
+                editswitchStatus: ''
 
             }
         },
@@ -71,34 +70,34 @@
 
         },
         methods: {
-            saveEdit(){
+            saveEdit() {
                 this.dialogVisible = false
                 let indicatorValue = this.editTable
                 //保存
-                console.log("修改名称",this.editList);
+                console.log("修改名称", this.editList);
                 let deviceId = this.editId
                 let switchStatus = this.editswitchStatus
-                let parmas = {indicatorValue,deviceId,switchStatus}
-                 $.ajax({
+                let parmas = { indicatorValue, deviceId, switchStatus }
+                $.ajax({
                     type: 'POST',
                     url: 'http://' + this.localIP + '/testData/setIndicatorValue',
-                    data:parmas,
+                    data: parmas,
                     success: (data) => {
-                        data.success && this.$message.success("修改数据获取成功！")
+                        data.success && this.$message({type:'success',message:'数据修改成功！',duration:1000})
                     },
                     error: () => {
                         this.$message.error("数据获取失败，请检查IP地址！")
                     }
                 })
             },
-            changeData(value){
+            changeData(value) {
                 console.log(value);
                 this.dialogVisible = true
-                if(!value.switchStatus){
+                if (!value.switchStatus) {
                     //等于一
-                    this.editTable = JSON.stringify(value.masterData)
-                }else{
-                    this.editTable = JSON.stringify(value.slaveData)
+                    this.editTable = this.getFormatData(JSON.stringify(value.masterData))
+                } else {
+                    this.editTable = this.getFormatData(JSON.stringify(value.slaveData))
                 }
                 this.editId = value.id
                 this.editswitchStatus = value.switchStatus
@@ -120,7 +119,7 @@
                             return
                         }
                         this.tableData = data.data
-                        data.success && this.$message.success("数据获取成功！")
+                        data.success && this.$message({type:'success',message:'数据获取成功！',duration:10000})
                     },
                     error: () => {
                         this.$message.error("数据获取失败，请检查IP地址！")
@@ -174,11 +173,88 @@
 
                     }
                 })
+                this.getAllMqttData()
             },
             //读取本地localIP
             getLocalIP() {
                 this.localIP = local('localIP') != null ? local('localIP') : '172.17.35.23:24699'
                 local('localIP') == null && local('localIP', '172.17.35.23:24699')
+            },
+
+            //方法
+            repeat(s, count) {
+                return new Array(count + 1).join(s)
+            },
+            formatJson(json) {
+                var i = 0,
+                    il = 0,
+                    tab = "    ",
+                    newJson = "",
+                    indentLevel = 0,
+                    inString = false,
+                    currentChar = null;
+                for (i = 0, il = json.length; i < il; i += 1) {
+                    currentChar = json.charAt(i);
+                    switch (currentChar) {
+                        case '{':
+                        case '[':
+                            if (!inString) {
+                                newJson += currentChar + "\n" + this.repeat(tab, indentLevel + 1);
+                                indentLevel += 1
+                            } else {
+                                newJson += currentChar
+                            }
+                            break;
+                        case '}':
+                        case ']':
+                            if (!inString) {
+                                indentLevel -= 1;
+                                newJson += "\n" + this.repeat(tab, indentLevel) + currentChar
+                            } else {
+                                newJson += currentChar
+                            }
+                            break;
+                        case ',':
+                            if (!inString) {
+                                newJson += ",\n" + this.repeat(tab, indentLevel)
+                            } else {
+                                newJson += currentChar
+                            }
+                            break;
+                        case ':':
+                            if (!inString) {
+                                newJson += ": "
+                            } else {
+                                newJson += currentChar
+                            }
+                            break;
+                        case ' ':
+                        case "\n":
+                        case "\t":
+                            if (inString) {
+                                newJson += currentChar
+                            }
+                            break;
+                        case '"':
+                            if (i > 0 && json.charAt(i - 1) !== '\\') {
+                                inString = !inString
+                            }
+                            newJson += currentChar;
+                            break;
+                        default:
+                            newJson += currentChar;
+                            break
+                    }
+                }
+                return newJson
+            },
+            getFormatData(json) {
+                var json = json + "";
+                if (json.indexOf('{') == -1 && json.indexOf('[') == -1) {
+                    return json;
+                } else {
+                    return (this.formatJson(json));
+                }
             }
 
         },
@@ -196,23 +272,25 @@
 </script>
 <style lang="less" scoped>
     .content {
-        margin: 5% 0 0 0;
+        width: 60%;
+        margin: 23% auto;
+        margin-bottom: 0;
     }
 
     .el_table {
-
-        width: 50%;
+        width: 100%;
         position: relative;
-        left: calc(50% - 15%);
+        
+    }
+    .content_title{
+        text-align: right;
+        margin-right: 10%;
+    }
+    /deep/.el-message{
+        top: 50px !important;
     }
 
-    @media screen and(max-width: 1366px) {
-        .el_table {
-            width: 60%;
-            left: calc(50% - 25%);
-        }
-    }
-    input{
+    input {
         height: 20rem;
     }
 </style>

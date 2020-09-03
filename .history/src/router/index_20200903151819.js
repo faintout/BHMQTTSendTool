@@ -13,12 +13,12 @@ const routes = [
     component: layout,
     children: [
       {
-        path: "/",
+        path: "/MqttSendTool",
         name: "MqttSendTool",
         component: MqttSendTool,
       },
       {
-        path: "/MovingInfoShow",
+        path: "/",
         name: "MovingInfoShow",
         component: MovingInfoShow,
       },
