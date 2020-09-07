@@ -3,10 +3,10 @@
         <title></title>
         <!-- 按钮模块 -->
         <div class="content_title">
-            定时刷新时间(MS),0为不刷新：<el-input style="display:inline-block;width:10%;margin-right:5%" size="small" v-model="timer"></el-input>
-            <!-- <el-button type="success" size="small" @click="getAllMqttData">获取</el-button> -->
-            <!-- <el-button size="mini" @click="batch(0)">批量主发送</el-button> -->
-            <el-button size="mini" type="success" @click="getDeviceList">刷新</el-button>
+            <!-- 定时刷新时间：<el-input style="display:inline-block;width:10%;" size="small" v-model="timer"></el-input> -->
+            <!-- <el-button type="success" size="small" @click="getAllMqttData">获取</el-button>
+            <el-button size="mini" @click="batch(0)">批量主发送</el-button>
+            <el-button size="mini" @click="batch(1)">批量备发送</el-button> -->
             <!-- <el-button type="success" size="small" @click="sendData()">发送</el-button> -->
         </div>
         <!-- <el-table v-loading="tableLoading" :data="tableData" class="el_table">
@@ -29,23 +29,12 @@
             </el-table-column>
         </el-table> -->
         <!-- 树形表格 -->
-
-        <!--  -->
-        <el-table :data="tableData" :span-method="objectSpanMethods" ref="myTable" style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all>
-            <template slot="empty">
-                <p>{{dataText}}</p>
-            </template>
-
+        <el-table :data="tableData"  style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
             <el-table-column prop="deviceName" label="设备" align='center'>
             </el-table-column>
             <el-table-column prop="indicatorName" label="指标名称" align='center'>
             </el-table-column>
-            <el-table-column prop="indicatorValue" label="指标值" align='center'>
-                <template slot-scope="scope">
-                    <i v-if="scope.row.isValueMap&&scope.row.originValue==1" class="red_round"></i>
-                    <i v-if="scope.row.isValueMap&&scope.row.originValue==0" class="green_round"></i>
-                    {{scope.row.indicatorValue}}{{scope.row.indicatorUnit}}
-                </template>
+            <el-table-column prop="indicatorValue" label="值" align='center'>
             </el-table-column>
         </el-table>
 
@@ -57,29 +46,32 @@
         components: {},
         data() {
             return {
-                dataText: '',
-                timer: 0,
-                timers: null,
                 localIp: '172.17.35.23:24699',
-                tableData: [],
-                tableLoading: true,
+                tableData: [{
+                    id: 1,
+                    deviceName: '温湿度',
+                    indicatorName: '',
+                    indicatorValue: ''
+                }, {
+                    id: 2,
+                    deviceName: '温湿度',
+                    indicatorName: '王小虎',
+                    indicatorValue: '上海市普陀区金沙江路 1517 弄'
+                }, {
+                    id: 3,
+                    deviceName: '温湿度',
+                    indicatorName: '',
+                    indicatorValue: '',
+                }, {
+                    id: 4,
+                    deviceName: '温湿度',
+                    indicatorName: '',
+                    indicatorValue: ''
+                }],
+                arr1:[]
             }
         },
-        watch: {
-            timer(n, o) {
-                if (n == 0 || o == 0) {
-                    clearInterval(this.timers)
-                }
-                if (n > 0 && n < 1000) {
-                    this.timer = 1000
-                }
-                if (o == 0 && n > 0) {
-                    clearInterval(this.timers)
-                    this.getDeviceList()
-                    // this.getData()
-                }
-            }
-        },
+        watch: {},
         computed: {},
         methods: {
             // deviceIndValueEmpty(indicatorCurr, i, c) {
@@ -101,14 +93,14 @@
                         spanOneArr.push(1);
                         spanTwoArr.push(1);
                     } else {
-                        if (item.deviceName === arr[index - 1].deviceName) { //第一列需合并相同内容的判断条件
+                        if (item.jxno === arr[index - 1].jxno) { //第一列需合并相同内容的判断条件
                             spanOneArr[concatOne] += 1;
                             spanOneArr.push(0);
                         } else {
                             spanOneArr.push(1);
                             concatOne = index;
                         };
-                        if (item.code === arr[index - 1].code && item.deviceName === arr[index - 1].deviceName) { //第二列需合并相同内容的判断条件
+                        if (item.code === arr[index - 1].code && item.jxno === arr[index - 1].jxno) { //第二列需合并相同内容的判断条件
                             spanTwoArr[concatTwo] += 1;
                             spanTwoArr.push(0);
                         } else {
@@ -123,43 +115,83 @@
                 }
             },
             // 合并列
-            objectSpanMethods({ row, column, rowIndex, columnIndex }) {
-                if (columnIndex === 0) {
-                    const _row = (this.flitterData(this.tableData).one)[rowIndex];
-                    const _col = _row > 0 ? 1 : 0;
+            // objectSpanMethods({ row, column, rowIndex, columnIndex }) {
+            //     if (columnIndex === 0) {
+            //         const _row = (this.flitterData(this.tableData).one)[rowIndex];
+            //         const _col = _row > 0 ? 1 : 0;
+            //         return {
+            //             rowspan: _row,
+            //             colspan: _col
+            //         };
+            //     }
+            //     if (columnIndex === 1) {
+            //         const _row = (this.flitterData(this.tableData).two)[rowIndex];
+            //         const _col = _row > 0 ? 1 : 0;
+            //         return {
+            //             rowspan: _row,
+            //             colspan: _col
+            //         };
+            //     }
+            // },
+            setdates(arr) {
+                console.log('arr',arr);
+                var obj = {},
+                    k, arr1 = [];
+                for (var i = 0, len = arr.length; i < len; i++) {
+                    console.log('len',arr[i]);
+                    k = arr[i].name;
+                    if (obj[k])
+                        obj[k]++;
+                    else
+                        obj[k] = 1;
+                }
+                console.log('obj',obj)
+                //保存结果{el-'元素'，count-出现次数}
+                for (var o in obj) {
+                    for (let i = 0; i < obj[o]; i++) {
+                        if (i === 0) {
+                            this.arr1.push(obj[o])
+                        } else {
+                            this.arr1.push(0)
+                        }
+                    }
+                }
+
+                console.log(this.arr1);
+            },
+            objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+                if (columnIndex === 0 && this.tableData[rowIndex].type == 0) {
+                    let _row = this.arr1[rowIndex]
+                    let _col = this.arr1[rowIndex] > 0 ? 1 : 0
                     return {
                         rowspan: _row,
                         colspan: _col
                     };
+                } else if (columnIndex === 0 && this.tableData[rowIndex].type == 1) {
+                    return {
+                        rowspan: 1,
+                        colspan: 2
+                    };
+                } else if (columnIndex === 1 && this.tableData[rowIndex].type == 1) {
+                    return {
+                        rowspan: 0,
+                        colspan: 0
+                    };
                 }
-                // if (columnIndex === 1) {
-                //     const _row = (this.flitterData(this.tableData).two)[rowIndex];
-                //     const _col = _row > 0 ? 1 : 0;
-                //     return {
-                //         rowspan: _row,
-                //         colspan: _col
-                //     };
-                // }
             },
             getDeviceList() {
-                this.tableLoading = true
-                this.timers&& clearInterval(this.timers)
                 let tableList = []
-                // this.tableData = []
                 let self = this
-
                 $.ajax({
                     type: "POST",
-                    async:false, 
                     url: 'http://' + self.localIp + '/testData/getPowerDeviceMsg',
-                    success: (deviceData) => {
+                    success(deviceData) {
                         let deviceList = deviceData.data
                         //获取设备指标名称
                         $.ajax({
                             type: 'POST',
-                            async:false, 
                             url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
-                            success: (indicatorName) => {
+                            success(indicatorName) {
                                 let indicators = indicatorName.data
                                 for (let i in deviceList) {
                                     var Obj = []
@@ -169,52 +201,43 @@
 
                                     $.ajax({
                                         type: 'POST',
-                                        async:false, 
                                         url: 'http://' + self.localIp + '/testData/getPeDeviceIndicatorData',
                                         // url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
                                         data: { deviceId: deviceList[i].id },
-                                        success: (data) => {
+                                        success(data) {
                                             let datas = data.data && (data.data.indicators.length ? data.data.indicators : []);
                                             // let datas = [];
+                                            console.log(datas);
                                             for (let a in datas) {
                                                 if (!datas.length) {
                                                     // this.deviceIndValueEmpty(indicators[c],i,c)
                                                     let ObjEmpty = {}
                                                     ObjEmpty.deviceName = deviceList[i].name
-                                                    ObjEmpty.id = c
+                                                    ObjEmpty.id = i + c
                                                     ObjEmpty.indicatorName = indicators[c].name
-                                                    ObjEmpty.indicatorValue = indicators[c].value || ''
-                                                    ObjEmpty.indicatorUnit = indicators[c].unit || ''
+                                                    ObjEmpty.indicatorValue = indicators[c].Value || '' + indicators[c].unit || ''
                                                     tableList.push(ObjEmpty)
-                                                    tableList.sort((a, b) => {
-                                                        return a.id - b.id
-                                                    })
                                                     continue
                                                 }
                                                 for (let c in indicators) {
                                                     if (indicators[c].id == datas[a].key) {
                                                         let ObjChildren = {}
-                                                        let itemValueMap = indicators[c].indicatorValueMap
                                                         ObjChildren.deviceName = deviceList[i].name
-                                                        ObjChildren.id = c
+                                                        ObjChildren.id = i + c
                                                         ObjChildren.indicatorName = indicators[c].name
-                                                        ObjChildren.indicatorValue = itemValueMap != null ? JSON.parse(JSON.stringify(itemValueMap))[parseInt(datas[a].value)] : datas[a].value
-                                                        ObjChildren.originValue = datas[a].value
-                                                        ObjChildren.isValueMap = Boolean(itemValueMap != null)
-                                                        ObjChildren.indicatorUnit = indicators[c].unit || ''
+                                                        ObjChildren.indicatorValue = datas[a].value
                                                         tableList.push(ObjChildren)
-                                                        tableList.sort((a, b) => {
-                                                            return a.id - b.id
-                                                        })
                                                     }
                                                 }
                                             }
-
                                         },
                                         error() {}
                                     })
+                                    // tableList.push(Obj)
                                 }
-
+                                self.tableData = tableList
+                                self.setdates(tableList)
+                                console.log('tableList', tableList);
                             },
                             error() {}
                         })
@@ -223,53 +246,13 @@
 
                     }
                 });
-                console.log('tableList', tableList);
-                this.tableData = tableList
-                this.tableLoading = false
-
-                 if (this.timer == 0) { return }
-                this.timers = setInterval(() => {
-                    self.getDeviceList()
-                }, self.timer)
-
             },
             getDeviceIndicator() {
 
-            },
-            getData() {
-                this.timers && clearInterval(this.timers)
-                console.log('开始查询');
-                $.ajax({
-                    type: "POST",
-                    async:false, 
-                    url: 'http://' + this.localIp + '/testData/getPowerDeviceMsg',
-                    success: data => {
-                        console.log(data.data);
-                        data = data.data
-                        
-                        let tempList = []
-                        for (let i in data) {
-                            let obj = {}
-                            obj.deviceName = data[i].name
-                            obj.indicatorName = data[i].name + 1
-                            obj.indicatorValue = data[i].id
-                            obj.id = data[i].id + 2
-                            tempList.push(obj)
-                        }
-                        console.log('this', data);
-                        this.tableData = tempList
-                        this.showData = data[0]
-                        console.log('showData', this.showData);
-                        // this.timer = 1200
-
-                    },
-                })
-                // this.tableData = []
             }
         },
         mounted() {
             this.getDeviceList()
-            // this.getData()
         },
         created() {
 
@@ -277,24 +260,6 @@
     }
 </script>
 <style lang="less" scoped>
-    .red_round {
-        transform: translate(0, 19%);
-        display: inline-block;
-        width: 1rem;
-        height: 1rem;
-        border-radius: 50%;
-        background-color: red;
-    }
-
-    .green_round {
-        transform: translate(0, 19%);
-        display: inline-block;
-        width: 1rem;
-        height: 1rem;
-        border-radius: 50%;
-        background-color: green;
-    }
-
     .content {
         width: 60%;
         margin: 2% auto;
@@ -309,9 +274,7 @@
 
     .content_title {
         text-align: right;
-        // margin-right: 10%;
-        // margin-bottom: 1%;
-        margin: 0 10% 1% 0;
+        margin-right: 10%;
     }
 
     /deep/.el-message {

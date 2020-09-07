@@ -145,7 +145,7 @@
                 this.tableLoading = true
                 this.timers&& clearInterval(this.timers)
                 let tableList = []
-                // this.tableData = []
+                this.tableData = []
                 let self = this
 
                 $.ajax({
@@ -176,6 +176,7 @@
                                         success: (data) => {
                                             let datas = data.data && (data.data.indicators.length ? data.data.indicators : []);
                                             // let datas = [];
+                                            console.log(indicators, datas);
                                             for (let a in datas) {
                                                 if (!datas.length) {
                                                     // this.deviceIndValueEmpty(indicators[c],i,c)
@@ -224,9 +225,11 @@
                     }
                 });
                 console.log('tableList', tableList);
+                // self.$nextTick(() => {
                 this.tableData = tableList
                 this.tableLoading = false
-
+                // self.refs.myTable.doLayout() 
+                // })
                  if (this.timer == 0) { return }
                 this.timers = setInterval(() => {
                     self.getDeviceList()
@@ -265,6 +268,7 @@
                     },
                 })
                 // this.tableData = []
+
             }
         },
         mounted() {

@@ -143,21 +143,19 @@
             },
             getDeviceList() {
                 this.tableLoading = true
-                this.timers&& clearInterval(this.timers)
+                // this.timers&& clearInterval(this.timers)
                 let tableList = []
-                // this.tableData = []
+                this.tableData = []
                 let self = this
 
                 $.ajax({
                     type: "POST",
-                    async:false, 
                     url: 'http://' + self.localIp + '/testData/getPowerDeviceMsg',
                     success: (deviceData) => {
                         let deviceList = deviceData.data
                         //获取设备指标名称
                         $.ajax({
                             type: 'POST',
-                            async:false, 
                             url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
                             success: (indicatorName) => {
                                 let indicators = indicatorName.data
@@ -169,13 +167,13 @@
 
                                     $.ajax({
                                         type: 'POST',
-                                        async:false, 
                                         url: 'http://' + self.localIp + '/testData/getPeDeviceIndicatorData',
                                         // url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
                                         data: { deviceId: deviceList[i].id },
                                         success: (data) => {
                                             let datas = data.data && (data.data.indicators.length ? data.data.indicators : []);
                                             // let datas = [];
+                                            console.log(indicators, datas);
                                             for (let a in datas) {
                                                 if (!datas.length) {
                                                     // this.deviceIndValueEmpty(indicators[c],i,c)
@@ -224,13 +222,15 @@
                     }
                 });
                 console.log('tableList', tableList);
+                // self.$nextTick(() => {
                 this.tableData = tableList
                 this.tableLoading = false
-
-                 if (this.timer == 0) { return }
-                this.timers = setInterval(() => {
-                    self.getDeviceList()
-                }, self.timer)
+                // self.refs.myTable.doLayout() 
+                // })
+                //  if (this.timer == 0) { return }
+                // this.timers = setInterval(() => {
+                //     self.getDeviceList()
+                // }, self.timer)
 
             },
             getDeviceIndicator() {
@@ -241,12 +241,10 @@
                 console.log('开始查询');
                 $.ajax({
                     type: "POST",
-                    async:false, 
                     url: 'http://' + this.localIp + '/testData/getPowerDeviceMsg',
                     success: data => {
                         console.log(data.data);
                         data = data.data
-                        
                         let tempList = []
                         for (let i in data) {
                             let obj = {}
@@ -264,7 +262,8 @@
 
                     },
                 })
-                // this.tableData = []
+                this.tableData = []
+
             }
         },
         mounted() {

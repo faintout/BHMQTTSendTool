@@ -29,9 +29,9 @@
             </el-table-column>
         </el-table> -->
         <!-- 树形表格 -->
-
-        <!--  -->
-        <el-table :data="tableData" :span-method="objectSpanMethods" ref="myTable" style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all>
+        
+        <!-- :span-method="objectSpanMethods" -->
+        <el-table :data="tableData" ref="myTable" style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all>
             <template slot="empty">
                 <p>{{dataText}}</p>
             </template>
@@ -41,11 +41,11 @@
             <el-table-column prop="indicatorName" label="指标名称" align='center'>
             </el-table-column>
             <el-table-column prop="indicatorValue" label="指标值" align='center'>
-                <template slot-scope="scope">
-                    <i v-if="scope.row.isValueMap&&scope.row.originValue==1" class="red_round"></i>
+                <!-- <template slot-scope="scope"> -->
+                <!-- <i v-if="scope.row.isValueMap&&scope.row.originValue==1" class="red_round"></i>
                     <i v-if="scope.row.isValueMap&&scope.row.originValue==0" class="green_round"></i>
-                    {{scope.row.indicatorValue}}{{scope.row.indicatorUnit}}
-                </template>
+                    {{scope.row.indicatorValue}}{{scope.row.indicatorUnit}} -->
+                <!-- </template> -->
             </el-table-column>
         </el-table>
 
@@ -63,6 +63,7 @@
                 localIp: '172.17.35.23:24699',
                 tableData: [],
                 tableLoading: true,
+                showData: []
             }
         },
         watch: {
@@ -76,7 +77,6 @@
                 if (o == 0 && n > 0) {
                     clearInterval(this.timers)
                     this.getDeviceList()
-                    // this.getData()
                 }
             }
         },
@@ -123,43 +123,41 @@
                 }
             },
             // 合并列
-            objectSpanMethods({ row, column, rowIndex, columnIndex }) {
-                if (columnIndex === 0) {
-                    const _row = (this.flitterData(this.tableData).one)[rowIndex];
-                    const _col = _row > 0 ? 1 : 0;
-                    return {
-                        rowspan: _row,
-                        colspan: _col
-                    };
-                }
-                // if (columnIndex === 1) {
-                //     const _row = (this.flitterData(this.tableData).two)[rowIndex];
-                //     const _col = _row > 0 ? 1 : 0;
-                //     return {
-                //         rowspan: _row,
-                //         colspan: _col
-                //     };
-                // }
-            },
+            // objectSpanMethods({ row, column, rowIndex, columnIndex }) {
+            //     if (columnIndex === 0) {
+            //         const _row = (this.flitterData(this.tableData).one)[rowIndex];
+            //         const _col = _row > 0 ? 1 : 0;
+            //         return {
+            //             rowspan: _row,
+            //             colspan: _col
+            //         };
+            //     }
+            //     // if (columnIndex === 1) {
+            //     //     const _row = (this.flitterData(this.tableData).two)[rowIndex];
+            //     //     const _col = _row > 0 ? 1 : 0;
+            //     //     return {
+            //     //         rowspan: _row,
+            //     //         colspan: _col
+            //     //     };
+            //     // }
+            // },
             getDeviceList() {
                 this.tableLoading = true
                 this.timers&& clearInterval(this.timers)
                 let tableList = []
-                // this.tableData = []
+                this.tableData = []
                 let self = this
 
                 $.ajax({
                     type: "POST",
-                    async:false, 
                     url: 'http://' + self.localIp + '/testData/getPowerDeviceMsg',
-                    success: (deviceData) => {
+                    success:(deviceData)=> {
                         let deviceList = deviceData.data
                         //获取设备指标名称
                         $.ajax({
                             type: 'POST',
-                            async:false, 
                             url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
-                            success: (indicatorName) => {
+                            success(indicatorName) {
                                 let indicators = indicatorName.data
                                 for (let i in deviceList) {
                                     var Obj = []
@@ -169,13 +167,13 @@
 
                                     $.ajax({
                                         type: 'POST',
-                                        async:false, 
                                         url: 'http://' + self.localIp + '/testData/getPeDeviceIndicatorData',
                                         // url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
                                         data: { deviceId: deviceList[i].id },
-                                        success: (data) => {
+                                        success:(data)=> {
                                             let datas = data.data && (data.data.indicators.length ? data.data.indicators : []);
                                             // let datas = [];
+                                            console.log(indicators, datas);
                                             for (let a in datas) {
                                                 if (!datas.length) {
                                                     // this.deviceIndValueEmpty(indicators[c],i,c)
@@ -223,48 +221,44 @@
 
                     }
                 });
-                console.log('tableList', tableList);
-                this.tableData = tableList
-                this.tableLoading = false
-
-                 if (this.timer == 0) { return }
-                this.timers = setInterval(() => {
+                self.$nextTick(() => {
+                    self.tableData = tableList
+                    self.tableLoading = false
+                    // self.refs.myTable.doLayout() 
+                })
+                console.log('tableList', self.tableData, self.tableData.length);
+                if (self.timer == 0) { return }
+                self.timers = setInterval(() => {
                     self.getDeviceList()
                 }, self.timer)
-
             },
             getDeviceIndicator() {
 
             },
             getData() {
-                this.timers && clearInterval(this.timers)
-                console.log('开始查询');
                 $.ajax({
                     type: "POST",
-                    async:false, 
                     url: 'http://' + this.localIp + '/testData/getPowerDeviceMsg',
-                    success: data => {
+                    success:data=> {
                         console.log(data.data);
                         data = data.data
-                        
                         let tempList = []
-                        for (let i in data) {
-                            let obj = {}
-                            obj.deviceName = data[i].name
-                            obj.indicatorName = data[i].name + 1
-                            obj.indicatorValue = data[i].id
-                            obj.id = data[i].id + 2
-                            tempList.push(obj)
-                        }
+                        // for (let i in data) {
+                        //     let obj = {}
+                        //     obj.deviceName = data[i].name
+                        //     obj.indicatorName = data[i].name + 1
+                        //     obj.indicatorValue = data[i].id
+                        //     obj.id = data[i].id + 2
+                        //     tempList.push(obj)
+                        // }
                         console.log('this', data);
-                        this.tableData = tempList
+                        // this.tableData = tempList
                         this.showData = data[0]
-                        console.log('showData', this.showData);
-                        // this.timer = 1200
-
+                        console.log('showData',this.showData);
+                        this.timer = 1200
+                        
                     },
                 })
-                // this.tableData = []
             }
         },
         mounted() {

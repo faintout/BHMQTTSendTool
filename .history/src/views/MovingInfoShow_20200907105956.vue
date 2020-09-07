@@ -6,7 +6,7 @@
             定时刷新时间(MS),0为不刷新：<el-input style="display:inline-block;width:10%;margin-right:5%" size="small" v-model="timer"></el-input>
             <!-- <el-button type="success" size="small" @click="getAllMqttData">获取</el-button> -->
             <!-- <el-button size="mini" @click="batch(0)">批量主发送</el-button> -->
-            <el-button size="mini" type="success" @click="getDeviceList">刷新</el-button>
+            <el-button size="mini" type="success" @click="getData">刷新</el-button>
             <!-- <el-button type="success" size="small" @click="sendData()">发送</el-button> -->
         </div>
         <!-- <el-table v-loading="tableLoading" :data="tableData" class="el_table">
@@ -143,21 +143,19 @@
             },
             getDeviceList() {
                 this.tableLoading = true
-                this.timers&& clearInterval(this.timers)
+                // this.timers&& clearInterval(this.timers)
                 let tableList = []
-                // this.tableData = []
+                this.tableData = []
                 let self = this
 
                 $.ajax({
                     type: "POST",
-                    async:false, 
                     url: 'http://' + self.localIp + '/testData/getPowerDeviceMsg',
                     success: (deviceData) => {
                         let deviceList = deviceData.data
                         //获取设备指标名称
                         $.ajax({
                             type: 'POST',
-                            async:false, 
                             url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
                             success: (indicatorName) => {
                                 let indicators = indicatorName.data
@@ -169,13 +167,13 @@
 
                                     $.ajax({
                                         type: 'POST',
-                                        async:false, 
                                         url: 'http://' + self.localIp + '/testData/getPeDeviceIndicatorData',
                                         // url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
                                         data: { deviceId: deviceList[i].id },
                                         success: (data) => {
                                             let datas = data.data && (data.data.indicators.length ? data.data.indicators : []);
                                             // let datas = [];
+                                            console.log(indicators, datas);
                                             for (let a in datas) {
                                                 if (!datas.length) {
                                                     // this.deviceIndValueEmpty(indicators[c],i,c)
@@ -224,13 +222,15 @@
                     }
                 });
                 console.log('tableList', tableList);
+                // self.$nextTick(() => {
                 this.tableData = tableList
                 this.tableLoading = false
-
-                 if (this.timer == 0) { return }
-                this.timers = setInterval(() => {
-                    self.getDeviceList()
-                }, self.timer)
+                // self.refs.myTable.doLayout() 
+                // })
+                //  if (this.timer == 0) { return }
+                // this.timers = setInterval(() => {
+                //     self.getDeviceList()
+                // }, self.timer)
 
             },
             getDeviceIndicator() {
@@ -264,7 +264,8 @@
 
                     },
                 })
-                // this.tableData = []
+                this.tableData = []
+
             }
         },
         mounted() {

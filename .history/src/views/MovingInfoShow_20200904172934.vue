@@ -29,13 +29,10 @@
             </el-table-column>
         </el-table> -->
         <!-- 树形表格 -->
-
-        <!--  -->
-        <el-table :data="tableData" :span-method="objectSpanMethods" ref="myTable" style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all>
+        <el-table :data="tableData" v-if="tableData" :span-method="objectSpanMethods" ref="myTable" style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
             <template slot="empty">
                 <p>{{dataText}}</p>
             </template>
-
             <el-table-column prop="deviceName" label="设备" align='center'>
             </el-table-column>
             <el-table-column prop="indicatorName" label="指标名称" align='center'>
@@ -63,6 +60,7 @@
                 localIp: '172.17.35.23:24699',
                 tableData: [],
                 tableLoading: true,
+                tableList:[]
             }
         },
         watch: {
@@ -74,9 +72,8 @@
                     this.timer = 1000
                 }
                 if (o == 0 && n > 0) {
-                    clearInterval(this.timers)
+                    // if (n < )
                     this.getDeviceList()
-                    // this.getData()
                 }
             }
         },
@@ -143,23 +140,22 @@
             },
             getDeviceList() {
                 this.tableLoading = true
-                this.timers&& clearInterval(this.timers)
-                let tableList = []
+                if (this.timers) {
+                    clearInterval(this.timers)
+                }
+                // let tableList
                 // this.tableData = []
                 let self = this
-
                 $.ajax({
                     type: "POST",
-                    async:false, 
                     url: 'http://' + self.localIp + '/testData/getPowerDeviceMsg',
-                    success: (deviceData) => {
+                    success(deviceData) {
                         let deviceList = deviceData.data
                         //获取设备指标名称
                         $.ajax({
                             type: 'POST',
-                            async:false, 
                             url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
-                            success: (indicatorName) => {
+                            success(indicatorName) {
                                 let indicators = indicatorName.data
                                 for (let i in deviceList) {
                                     var Obj = []
@@ -169,13 +165,13 @@
 
                                     $.ajax({
                                         type: 'POST',
-                                        async:false, 
                                         url: 'http://' + self.localIp + '/testData/getPeDeviceIndicatorData',
                                         // url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
                                         data: { deviceId: deviceList[i].id },
-                                        success: (data) => {
+                                        success(data) {
                                             let datas = data.data && (data.data.indicators.length ? data.data.indicators : []);
                                             // let datas = [];
+                                            console.log(indicators, datas);
                                             for (let a in datas) {
                                                 if (!datas.length) {
                                                     // this.deviceIndValueEmpty(indicators[c],i,c)
@@ -185,8 +181,8 @@
                                                     ObjEmpty.indicatorName = indicators[c].name
                                                     ObjEmpty.indicatorValue = indicators[c].value || ''
                                                     ObjEmpty.indicatorUnit = indicators[c].unit || ''
-                                                    tableList.push(ObjEmpty)
-                                                    tableList.sort((a, b) => {
+                                                    self.tableList.push(ObjEmpty)
+                                                    self.tableList.sort((a, b) => {
                                                         return a.id - b.id
                                                     })
                                                     continue
@@ -202,8 +198,8 @@
                                                         ObjChildren.originValue = datas[a].value
                                                         ObjChildren.isValueMap = Boolean(itemValueMap != null)
                                                         ObjChildren.indicatorUnit = indicators[c].unit || ''
-                                                        tableList.push(ObjChildren)
-                                                        tableList.sort((a, b) => {
+                                                        self.tableList.push(ObjChildren)
+                                                        self.tableList.sort((a, b) => {
                                                             return a.id - b.id
                                                         })
                                                     }
@@ -223,53 +219,50 @@
 
                     }
                 });
-                console.log('tableList', tableList);
-                this.tableData = tableList
-                this.tableLoading = false
+                tableList = [{
+                    id: '12987122',
+                    deviceName: '王小虎',
+                    indicatorName: '234',
+                    indicatorValue: 10
+                }, {
+                    id: '12987123',
+                    deviceName: '王小虎',
+                    indicatorName: '165',
+                    indicatorValue: 12
+                }, {
+                    id: '12987124',
+                    deviceName: '王小虎',
+                    indicatorName: '324',
+                    indicatorValue: 9
+                }, {
+                    id: '12987125',
+                    deviceName: '王小虎',
+                    indicatorName: '621',
+                    indicatorValue: 17
+                }, {
+                    id: '12987126',
+                    deviceName: '王小虎',
+                    indicatorName: '539',
+                    indicatorValue: 15
+                }]
+                // self.$nextTick(() => {
 
-                 if (this.timer == 0) { return }
-                this.timers = setInterval(() => {
+                    self.tableData = self.tableList
+                    self.tableLoading = false
+                    // self.refs.myTable.doLayout() 
+                // })
+                console.log('tableList', self.tableData, self.tableData.length);
+                if (self.timer == 0) { return }
+                self.timers = setInterval(() => {
                     self.getDeviceList()
                 }, self.timer)
-
             },
             getDeviceIndicator() {
 
-            },
-            getData() {
-                this.timers && clearInterval(this.timers)
-                console.log('开始查询');
-                $.ajax({
-                    type: "POST",
-                    async:false, 
-                    url: 'http://' + this.localIp + '/testData/getPowerDeviceMsg',
-                    success: data => {
-                        console.log(data.data);
-                        data = data.data
-                        
-                        let tempList = []
-                        for (let i in data) {
-                            let obj = {}
-                            obj.deviceName = data[i].name
-                            obj.indicatorName = data[i].name + 1
-                            obj.indicatorValue = data[i].id
-                            obj.id = data[i].id + 2
-                            tempList.push(obj)
-                        }
-                        console.log('this', data);
-                        this.tableData = tempList
-                        this.showData = data[0]
-                        console.log('showData', this.showData);
-                        // this.timer = 1200
-
-                    },
-                })
-                // this.tableData = []
             }
         },
         mounted() {
             this.getDeviceList()
-            // this.getData()
         },
         created() {
 

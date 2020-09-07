@@ -224,9 +224,11 @@
                     }
                 });
                 console.log('tableList', tableList);
+                // self.$nextTick(() => {
                 this.tableData = tableList
                 this.tableLoading = false
-
+                // self.refs.myTable.doLayout() 
+                // })
                  if (this.timer == 0) { return }
                 this.timers = setInterval(() => {
                     self.getDeviceList()
@@ -265,6 +267,7 @@
                     },
                 })
                 // this.tableData = []
+
             }
         },
         mounted() {
