@@ -1,9 +1,10 @@
 <template>
     <div>
-        <!-- <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
-            <el-menu-item index="1"><router-link to='/MqttSendTool'>MQTT批量下发工具</router-link></el-menu-item>
+        <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal">
+            <!-- <el-menu-item index="1">处理中心</el-menu-item> -->
+            <router-link to='/MqttSendTool'><el-menu-item index="1">MQTT批量下发工具</el-menu-item></router-link>
             <el-menu-item index="2"><router-link to='/MovingInfoShow'>动环指标数据展示</router-link></el-menu-item>
-        </el-menu> -->
+        </el-menu>
     </div>
 </template>
 

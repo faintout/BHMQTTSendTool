@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-      <v-header></v-header>
+      <header></header>
     <router-view/>
   </div>
 </template>
@@ -9,11 +9,9 @@
 
 
 <script>
-import vHeader from './views/header'
+import header from './views/header'
 export default {
-  components:{
-      vHeader
-  }
+  components:{}
 }
 </script>
 

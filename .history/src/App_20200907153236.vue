@@ -9,10 +9,10 @@
 
 
 <script>
-import vHeader from './views/header'
+import Vheader from './views/header'
 export default {
   components:{
-      vHeader
+      Vheader
   }
 }
 </script>

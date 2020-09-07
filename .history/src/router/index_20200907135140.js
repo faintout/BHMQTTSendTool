@@ -11,7 +11,6 @@ const routes = [
     path: "/",
     name: "layout",
     component: layout,
-    redirect:'/MqttSendTool',
     children: [
       {
         path: "/MqttSendTool",
