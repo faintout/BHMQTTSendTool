@@ -31,10 +31,10 @@
         <!-- 树形表格 -->
 
         <!--  -->
-        <el-table :data="tableData" :span-method="objectSpanMethods" ref="myTable" style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all>
-            <template slot="empty">
+        <el-table :data="tableData" v-loading="tableLoading" :span-method="objectSpanMethods" ref="myTable" style="width: 100%;margin-bottom: 20px;" row-key="id" border default-expand-all>
+            <!-- <template slot="empty">
                 <p>{{dataText}}</p>
-            </template>
+            </template> -->
 
             <el-table-column prop="deviceName" label="设备" align='center'>
             </el-table-column>
@@ -141,93 +141,117 @@
                 //     };
                 // }
             },
-            getDeviceList() {
-                this.tableLoading = true
-                this.timers&& clearInterval(this.timers)
+            //赋值空数据方法
+            setIndicatorValueEmpty(deviceList, indicators, i, c) {
+                let ObjEmpty = {}
+                ObjEmpty.deviceName = deviceList[i].name
+                ObjEmpty.id = c
+                ObjEmpty.indicatorName = indicators[c].name || ''
+                ObjEmpty.indicatorValue = indicators[c].value || ''
+                ObjEmpty.indicatorUnit = indicators[c].unit || ''
+                return ObjEmpty
+            },
+            //获取设备信息
+            getDeviceInfo() {
+                return new Promise((res, rej) => {
+                    $.ajax({
+                        type: "POST",
+                        url: 'http://' + this.localIp + '/testData/getPowerDeviceMsg',
+                        success: (deviceData) => {
+                            res(deviceData.data)
+                        },
+                        error: (err) => {
+                            rej('数据获取失败')
+                        }
+                    })
+                })
+            },
+            //获取指标
+            getDeviceIndocator() {
+                return new Promise((res, rej) => {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'http://' + this.localIp + '/testData/getPeDeviceIndicator',
+                        success: (indicatorName) => {
+                            res(indicatorName.data)
+                        },
+                        error: () => {
+                            rej('数据获取失败')
+                        }
+                    })
+                })
+            },
+            // 获取指标值
+            getIndicatorData(deviceId) {
+                return new Promise((res, rej) => {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'http://' + this.localIp + '/testData/getPeDeviceIndicatorData',
+                        // url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
+                        data: { deviceId, },
+                        success: (data) => {
+                            res(data.data && (data.data.indicators.length ? data.data.indicators : []))
+                        },
+                        error: () => {
+                            rej('数据获取失败')
+                        }
+                    })
+                })
+            },
+            async getDeviceList() {
+                !this.timer&&(this.tableLoading = true)
+                this.timers && clearInterval(this.timers)
                 let tableList = []
                 // this.tableData = []
                 let self = this
-
-                $.ajax({
-                    type: "POST",
-                    async:false, 
-                    url: 'http://' + self.localIp + '/testData/getPowerDeviceMsg',
-                    success: (deviceData) => {
-                        let deviceList = deviceData.data
-                        //获取设备指标名称
-                        $.ajax({
-                            type: 'POST',
-                            async:false, 
-                            url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
-                            success: (indicatorName) => {
-                                let indicators = indicatorName.data
-                                for (let i in deviceList) {
-                                    var Obj = []
-                                    // Obj.deviceName = deviceList[i].name
-                                    // Obj.id = deviceList[i].id
-                                    // Obj.children = []
-
-                                    $.ajax({
-                                        type: 'POST',
-                                        async:false, 
-                                        url: 'http://' + self.localIp + '/testData/getPeDeviceIndicatorData',
-                                        // url: 'http://' + self.localIp + '/testData/getPeDeviceIndicator',
-                                        data: { deviceId: deviceList[i].id },
-                                        success: (data) => {
-                                            let datas = data.data && (data.data.indicators.length ? data.data.indicators : []);
-                                            // let datas = [];
-                                            for (let a in datas) {
-                                                if (!datas.length) {
-                                                    // this.deviceIndValueEmpty(indicators[c],i,c)
-                                                    let ObjEmpty = {}
-                                                    ObjEmpty.deviceName = deviceList[i].name
-                                                    ObjEmpty.id = c
-                                                    ObjEmpty.indicatorName = indicators[c].name
-                                                    ObjEmpty.indicatorValue = indicators[c].value || ''
-                                                    ObjEmpty.indicatorUnit = indicators[c].unit || ''
-                                                    tableList.push(ObjEmpty)
-                                                    tableList.sort((a, b) => {
-                                                        return a.id - b.id
-                                                    })
-                                                    continue
-                                                }
-                                                for (let c in indicators) {
-                                                    if (indicators[c].id == datas[a].key) {
-                                                        let ObjChildren = {}
-                                                        let itemValueMap = indicators[c].indicatorValueMap
-                                                        ObjChildren.deviceName = deviceList[i].name
-                                                        ObjChildren.id = c
-                                                        ObjChildren.indicatorName = indicators[c].name
-                                                        ObjChildren.indicatorValue = itemValueMap != null ? JSON.parse(JSON.stringify(itemValueMap))[parseInt(datas[a].value)] : datas[a].value
-                                                        ObjChildren.originValue = datas[a].value
-                                                        ObjChildren.isValueMap = Boolean(itemValueMap != null)
-                                                        ObjChildren.indicatorUnit = indicators[c].unit || ''
-                                                        tableList.push(ObjChildren)
-                                                        tableList.sort((a, b) => {
-                                                            return a.id - b.id
-                                                        })
-                                                    }
-                                                }
-                                            }
-
-                                        },
-                                        error() {}
-                                    })
+                //设备信息
+                let deviceList = await this.getDeviceInfo()
+                console.log(deviceList);
+                if (typeof deviceList == 'string') {
+                    this.$message({ type: "error", message: deviceList, duration: 3000 })
+                    this.tableLoading = false
+                    return
+                }
+                let indicators = await this.getDeviceIndocator()
+                if (typeof indicators == 'string') {
+                    this.$message({ type: "error", message: indicators, duration: 3000 })
+                    this.tableLoading = false
+                    return
+                }
+                for (let i in deviceList) {
+                    var Obj = []
+                    let datas = await this.getIndicatorData(deviceList[i].id)
+                    if (typeof indicatorData == 'string') {
+                        this.$message({ type: "error", message: indicatorData, duration: 3000 })
+                        this.tableLoading = false
+                        return
+                    } else {
+                        for (let a in datas) {
+                            for (let c in indicators) {
+                                if (indicators[c].id == datas[a].key) {
+                                    let ObjChildren = {}
+                                    let itemValueMap = indicators[c].indicatorValueMap
+                                    ObjChildren.deviceName = deviceList[i].name
+                                    ObjChildren.id = c
+                                    ObjChildren.indicatorName = indicators[c].name
+                                    ObjChildren.indicatorValue = itemValueMap != null ? JSON.parse(JSON.stringify(itemValueMap))[parseInt(datas[a].value)] : datas[a].value
+                                    ObjChildren.originValue = datas[a].value
+                                    ObjChildren.isValueMap = Boolean(itemValueMap != null)
+                                    ObjChildren.indicatorUnit = indicators[c].unit || ''
+                                    tableList.push(ObjChildren)
                                 }
-
-                            },
-                            error() {}
-                        })
-                    },
-                    error() {
-
+                            }
+                        }
                     }
-                });
+                }
+                tableList.sort((a, b) => {
+                    return a.id - b.id
+                })
                 console.log('tableList', tableList);
                 this.tableData = tableList
                 this.tableLoading = false
 
-                 if (this.timer == 0) { return }
+                if (this.timer == 0) { return }
                 this.timers = setInterval(() => {
                     self.getDeviceList()
                 }, self.timer)
@@ -241,12 +265,12 @@
                 console.log('开始查询');
                 $.ajax({
                     type: "POST",
-                    async:false, 
+                    async: false,
                     url: 'http://' + this.localIp + '/testData/getPowerDeviceMsg',
                     success: data => {
                         console.log(data.data);
                         data = data.data
-                        
+
                         let tempList = []
                         for (let i in data) {
                             let obj = {}
@@ -274,6 +298,9 @@
         created() {
 
         },
+        destroyed(){
+            this.timers && clearInterval(this.timers)
+        }
     }
 </script>
 <style lang="less" scoped>

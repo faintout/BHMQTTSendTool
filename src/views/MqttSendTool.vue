@@ -112,6 +112,7 @@
                     type: 'POST',
                     url: 'http://' + this.localIP + '/testData/getDeviceListData',
                     success: (data) => {
+                        console.log(typeof data);
                         this.tableLoading  = false
                         if (data.data == []) {
                             this.$message({type:'error',message:'获取数据为空！请确认数据是否存在',duration:3000,offset:100})
@@ -169,8 +170,9 @@
                         data.success && this.$message({type:'success',message:'数据发送成功！',duration:1000,offset:100})
                         this.tableLoading = false
                     },
-                    error: () => {
-
+                    error: (err) => {
+                        this.$message({type:'error',message:err.msg||'数据发送错误！',duration:1000,offset:100})
+                        this.tableLoading = false
                     }
                 })
                 // this.getAllMqttData()

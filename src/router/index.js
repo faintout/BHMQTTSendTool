@@ -1,8 +1,8 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 // import { resolve } from "core-js/fn/promise";
-import MqttSendTool from "../views/MqttSendTool.vue";
-import MovingInfoShow from "../views/MovingInfoShow.vue";
+// import MqttSendTool from "../views/MqttSendTool.vue";
+// import MovingInfoShow from "../views/MovingInfoShow.vue";
 // import layout from "../views/layout.vue";
 
 Vue.use(VueRouter);
@@ -12,10 +12,11 @@ const routes = [
   {
     path: "/",
     name: "layout",
+    redirect:'/MqttSendTool',
     component: resolve=>require(['../views/layout.vue'],resolve),
     children: [
       {
-        path: "/",
+        path: "/MqttSendTool",
         name: "MqttSendTool",
         component: resolve=>require(['../views/MqttSendTool.vue'],resolve),
       },
